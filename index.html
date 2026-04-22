@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HospiGlass Sys - Import/Export Offline</title>
+    <style>
+        /* --- TU CSS ORIGINAL LIQUID GLASS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap');
+
+        body {
+            margin: 0;
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, #4facfe 0%, #005c61 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            color: #fff; 
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        nav.glass-nav {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            padding: 1rem 2rem;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        nav a { color: #fff; text-decoration: none; font-weight: 600; margin-left: 1.5rem; transition: 0.3s; cursor: pointer; }
+        nav a:hover { text-shadow: 0 0 10px rgba(255,255,255,0.8); color: #e0f7ff; }
+        .brand { font-size: 1.5rem; font-weight: bold; color: #fff; }
+        .container { max-width: 1000px; margin: 3rem auto; padding: 0 1rem; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-top: 2rem; }
+        .glass-card { text-align: center; padding: 20px; border-radius: 15px; background: rgba(255, 255, 255, 0.15); transition: 0.3s ease; }
+        .glass-card:hover { transform: translateY(-8px); background: rgba(255, 255, 255, 0.25); }
+
+        .btn-glass {
+            display: inline-block; margin-top: 1rem; padding: 12px 25px;
+            background: rgba(255, 255, 255, 0.25); border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50px; color: #fff; text-decoration: none; font-weight: bold;
+            cursor: pointer; transition: all 0.3s ease; width: 100%; box-sizing: border-box; text-align: center;
+        }
+        .btn-glass:hover { background: rgba(255, 255, 255, 0.45); transform: scale(1.02); }
+
+        form label { display: block; margin-bottom: 8px; font-weight: 600; }
+        input, textarea {
+            width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.15); color: white; font-family: 'Montserrat', sans-serif;
+            font-size: 1rem; box-sizing: border-box; outline: none; margin-bottom: 15px; transition: 0.3s;
+        }
+        input:focus, textarea:focus { background: rgba(255, 255, 255, 0.25); border-color: #fff; }
+
+        .seccion { display: none; }
+        .seccion.activa { display: block; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .paciente-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4facfe;
+        }
+
+        /* Contenedor flexible para los botones de import/export */
+        .botones-db {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="glass-nav">
+        <div class="brand">🏥 HospiGlass Sys</div>
+        <div>
+            <a onclick="mostrarSeccion('inicio')">Inicio</a>
+            <a onclick="mostrarSeccion('pacientes')">Nuevo Registro</a>
+            <a onclick="mostrarSeccion('registros'); cargarRegistros()">Ver Registros</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div id="inicio" class="seccion activa">
+            <div class="glass-panel" style="text-align: center;">
+                <h1 style="font-size: 2.5rem; margin-top: 0;">Sistema de Gestión Offline</h1>
+                <p>Crea, exporta e importa tu base de datos mediante archivos de texto.</p>
+
+                <div class="dashboard-grid">
+                    <div class="glass-card">
+                        <h3>Alta de Pacientes</h3>
+                        <p>Guardar en memoria local.</p>
+                        <button onclick="mostrarSeccion('pacientes')" class="btn-glass">Registrar</button>
+                    </div>
+                    <div class="glass-card">
+                        <h3>Base de Datos</h3>
+                        <p>Importar y exportar registros.</p>
+                        <button onclick="mostrarSeccion('registros'); cargarRegistros()" class="btn-glass">Consultar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="pacientes" class="seccion">
+            <div class="glass-panel">
+                <h2 style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 10px;">Nuevo Paciente</h2>
+                
+                <form id="formPaciente" style="margin-top: 20px;">
+                    <label for="nombre">Nombre Completo:</label>
+                    <input type="text" id="nombre" required>
+
+                    <label for="edad">Edad:</label>
+                    <input type="number" id="edad" required>
+
+                    <label for="fecha">Fecha de Ingreso:</label>
+                    <input type="date" id="fecha" required>
+
+                    <label for="historial">Motivo de Consulta:</label>
+                    <textarea id="historial" rows="3" required></textarea>
+
+                    <button type="submit" class="btn-glass">💾 Guardar en Memoria</button>
+                </form>
+                <p id="mensajeExito" style="color: #a8ff78; text-align: center; display: none; font-weight: bold;">¡Paciente guardado exitosamente!</p>
+            </div>
+        </div>
+
+        <div id="registros" class="seccion">
+            <div class="glass-panel">
+                <h2 style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 10px;">Pacientes en Memoria</h2>
+                
+                <div class="botones-db">
+                    <button onclick="descargarBaseDatos()" class="btn-glass" style="background: rgba(79, 172, 254, 0.4); margin-top: 0;">
+                        📥 Exportar (.txt)
+                    </button>
+                    
+                    <!-- Este input está oculto, el botón de abajo lo activa -->
+                    <input type="file" id="archivoTxt" accept=".txt" style="display: none;" onchange="importarBaseDatos(event)">
+                    
+                    <button onclick="document.getElementById('archivoTxt').click()" class="btn-glass" style="background: rgba(0, 180, 130, 0.4); margin-top: 0;">
+                        📤 Importar (.txt)
+                    </button>
+                </div>
+
+                <div id="contenedorPacientes"></div>
+                
+                <button onclick="borrarMemoria()" class="btn-glass" style="background: rgba(255, 0, 0, 0.3); margin-top: 20px; border-color: rgba(255,0,0,0.5);">
+                    🗑️ Borrar toda la memoria
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. NAVEGACIÓN Y FECHAS ---
+        function mostrarSeccion(idSeccion) {
+            document.querySelectorAll('.seccion').forEach(sec => sec.classList.remove('activa'));
+            document.getElementById(idSeccion).classList.add('activa');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.querySelector('input[type="date"]');
+            if (dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.setAttribute('min', today);
+            }
+        });
+
+        // --- 2. GUARDAR NUEVO PACIENTE EN LOCALSTORAGE ---
+        document.getElementById('formPaciente').addEventListener('submit', (evento) => {
+            evento.preventDefault(); 
+            const nuevoPaciente = {
+                nombre: document.getElementById('nombre').value,
+                edad: document.getElementById('edad').value,
+                fecha: document.getElementById('fecha').value,
+                historial: document.getElementById('historial').value
+            };
+            let baseDatos = JSON.parse(localStorage.getItem('hospiglass_db')) || [];
+            baseDatos.push(nuevoPaciente);
+            localStorage.setItem('hospiglass_db', JSON.stringify(baseDatos));
+            document.getElementById('formPaciente').reset();
+            const msj = document.getElementById('mensajeExito');
+            msj.style.display = 'block';
+            setTimeout(() => msj.style.display = 'none', 3000);
+        });
+
+        // --- 3. MOSTRAR REGISTROS ---
+        function cargarRegistros() {
+            const contenedor = document.getElementById('contenedorPacientes');
+            let baseDatos = JSON.parse(localStorage.getItem('hospiglass_db')) || [];
+
+            if (baseDatos.length === 0) {
+                contenedor.innerHTML = "<p style='text-align:center;'>No hay pacientes registrados aún.</p>";
+                return;
+            }
+
+            contenedor.innerHTML = "";
+            baseDatos.forEach((paciente) => {
+                contenedor.innerHTML += `
+                    <div class="paciente-item">
+                        <strong style="font-size: 1.2rem; color: #a8ff78;">${paciente.nombre}</strong> <br>
+                        <small>Edad: ${paciente.edad} | Ingreso: ${paciente.fecha}</small>
+                        <p style="margin: 5px 0 0 0; font-style: italic;">"${paciente.historial}"</p>
+                    </div>
+                `;
+            });
+        }
+
+        // --- 4. EXPORTAR (DESCARGAR TXT) ---
+        function descargarBaseDatos() {
+            let baseDatos = JSON.parse(localStorage.getItem('hospiglass_db')) || [];
+            if (baseDatos.length === 0) { alert("No hay datos para exportar."); return; }
+
+            let textoFinal = "=========================================\n";
+            textoFinal += "   HOSPIGLASS SYS - BASE DE DATOS\n";
+            textoFinal += "=========================================\n\n";
+
+            baseDatos.forEach((p, index) => {
+                textoFinal += `[PACIENTE #${index + 1}]\n`;
+                textoFinal += `Nombre: ${p.nombre}\n`;
+                textoFinal += `Edad: ${p.edad}\n`;
+                textoFinal += `Fecha: ${p.fecha}\n`;
+                textoFinal += `Historial: ${p.historial}\n`;
+                textoFinal += `-----------------------------------------\n`;
+            });
+
+            const archivo = new Blob([textoFinal], { type: 'text/plain' });
+            const enlace = document.createElement('a');
+            enlace.href = URL.createObjectURL(archivo);
+            enlace.download = `HospiGlass_BD.txt`;
+            enlace.click();
+            URL.revokeObjectURL(enlace.href);
+        }
+
+        // --- 5. IMPORTAR (LEER TXT Y GUARDAR EN MEMORIA) ---
+        function importarBaseDatos(evento) {
+            const archivo = evento.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            
+            // Esta función se ejecuta cuando el archivo termina de leerse
+            lector.onload = function(e) {
+                const contenido = e.target.result;
+                const lineas = contenido.split('\n');
+                let nuevosPacientes = [];
+                let pacienteTemporal = {};
+                let leyendoHistorial = false;
+
+                // Algoritmo para extraer los datos del texto
+                for (let linea of lineas) {
+                    linea = linea.trim();
+                    if (linea.startsWith('[PACIENTE #')) {
+                        pacienteTemporal = {};
+                        leyendoHistorial = false;
+                    } else if (linea.startsWith('Nombre: ')) {
+                        pacienteTemporal.nombre = linea.substring(8);
+                    } else if (linea.startsWith('Edad: ')) {
+                        pacienteTemporal.edad = linea.substring(6);
+                    } else if (linea.startsWith('Fecha: ')) {
+                        pacienteTemporal.fecha = linea.substring(7);
+                    } else if (linea.startsWith('Historial: ')) {
+                        pacienteTemporal.historial = linea.substring(11);
+                        leyendoHistorial = true;
+                    } else if (linea === '-----------------------------------------') {
+                        if (pacienteTemporal.nombre) nuevosPacientes.push({...pacienteTemporal});
+                        leyendoHistorial = false;
+                    } else if (leyendoHistorial && linea !== '') {
+                        pacienteTemporal.historial += '\n' + linea;
+                    }
+                }
+
+                // Guardar los datos recuperados en el localStorage
+                if (nuevosPacientes.length > 0) {
+                    let baseDatosActual = JSON.parse(localStorage.getItem('hospiglass_db')) || [];
+                    // Juntamos lo que ya había con lo nuevo importado
+                    baseDatosActual = baseDatosActual.concat(nuevosPacientes);
+                    localStorage.setItem('hospiglass_db', JSON.stringify(baseDatosActual));
+                    cargarRegistros();
+                    alert(`¡Éxito! Se importaron ${nuevosPacientes.length} registros a la memoria.`);
+                } else {
+                    alert("No se encontraron registros válidos o el archivo no tiene el formato correcto.");
+                }
+            };
+            
+            // Le pedimos al lector que analice el archivo de texto
+            lector.readAsText(archivo);
+            evento.target.value = ''; // Reseteamos el input para que puedas subir el mismo archivo después si quieres
+        }
+
+        // --- 6. BORRAR MEMORIA ---
+        function borrarMemoria() {
+            if(confirm("¿Estás seguro? Esto borrará todos los pacientes de este dispositivo.")) {
+                localStorage.removeItem('hospiglass_db');
+                cargarRegistros();
+            }
+        }
+    </script>
+</body>
+</html>
